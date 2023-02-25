@@ -7,7 +7,8 @@ import java.util.Random;
 public class MulticastServerTasca4 {
     String[] frases = {
             "Android Studio me amarga la vida",
-            "Una frase cierta: El Jonathan no tiene pelo vaya bobo",
+            "Hola que tal",
+            "Libros de Stephen King",
             "Los cascos inalambricos de iPhone son un atraco a mano armada",
             "Tenemos que entregar 59 proyectos para marzo, ayudame dios mio",
             "El Miquel Pineda no viene nunca a clase, DEP"

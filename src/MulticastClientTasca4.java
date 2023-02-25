@@ -1,32 +1,63 @@
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
+import java.net.*;
 
 public class MulticastClientTasca4 {
-    public static void main(String[] args) {
-        try {
-            InetAddress multicastIP = InetAddress.getByName("224.1.1.1"); // adreça IP multicast del servidor
-            int port = 5557; // port del servidor
-            MulticastSocket socket = new MulticastSocket(port); // creem el socket multicast
-            socket.joinGroup(multicastIP); // ens unim al grup multicast del servidor
+    private boolean continueRunning = true;
+    private MulticastSocket socket;
+    private int port;
+    private InetAddress multicastIP;
+    private NetworkInterface netIf;
+    private InetSocketAddress group;
 
-            byte[] receivingFrases = new byte[1024];
-            while (true) {
-                DatagramPacket packet = new DatagramPacket(receivingFrases, receivingFrases.length);
-                socket.receive(packet); // esperem a rebre una frase del servidor
-                String frase = new String(packet.getData(), 0, packet.getLength());
-                if (countWords(frase) > 8) { // si la frase conté més de 8 paraules
-                    System.out.println(frase); // la imprimim
-                }
+
+    public MulticastClientTasca4(int port, String multicastIP) throws IOException {
+        socket = new MulticastSocket(port);
+        this.multicastIP = InetAddress.getByName(multicastIP);
+        this.port = port;
+        netIf = socket.getNetworkInterface();
+        group = new InetSocketAddress(multicastIP,port);
+    }
+
+    public void runClient() throws IOException {
+        DatagramPacket packet;
+        byte[] receivedData = new byte[1024];
+
+        socket.joinGroup(group, netIf);
+        System.out.printf("Connectat a %s:%d%n", group.getAddress(), group.getPort());
+
+        while (continueRunning) {
+            packet = new DatagramPacket(receivedData, receivedData.length);
+            socket.setSoTimeout(5000);
+            try {
+                socket.receive(packet);
+                continueRunning = getData(packet.getData(), packet.getLength());
+            } catch (SocketTimeoutException e) {
+                System.out.println("S'ha perdut la connexió amb el servidor.");
+                continueRunning = false;
             }
-        } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private static int countWords(String text) {
-        String[] words = text.trim().split("\\s+");
+    protected boolean getData(byte[] data,int length) {
+        boolean ret = true;
+
+        String frase = new String(data, 0, length);
+
+        int numPalabras = comptaParaules(frase);
+        if (numPalabras > 8) {
+            System.out.println(frase);
+        }
+
+        return ret;
+    }
+
+    private static int comptaParaules(String text) {
+        String[] words = text.trim().split(" ");
         return words.length;
     }
 
